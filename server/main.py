@@ -58,7 +58,7 @@ async def start_mininet(hosts, switches, topology):
         
         if topology == "star":
             topo = StarTopo(hosts, switches)
-        elif topology == "tree":
+        elif topology == "fattree":
             topo = FatTree(hosts)
         elif topology == "ring":
             topo = RingTopo(switches)

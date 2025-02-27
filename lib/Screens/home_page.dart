@@ -104,7 +104,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           return null;
                         },
                         items: [
-                          myDropdownItem('tree', 'Fat Tree Topology'),
+                          myDropdownItem('fattree', 'Fat Tree Topology'),
                           myDropdownItem('mesh', 'Mesh Topology'),
                           // myDropdownItem('tree', 'Tree Topology'),
                           myDropdownItem('custom', 'Custom Topology'),
