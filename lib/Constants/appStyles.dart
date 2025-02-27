@@ -88,7 +88,7 @@ class AppStyles {
   static final ButtonStyle mediumButtonStyle = ElevatedButton.styleFrom(
     backgroundColor: buttonColor,
     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-    textStyle: mediumWhiteTextStyle(),
+    textStyle: mediumBlackTextStyle(),
   );
   static final ButtonStyle mediumWhiteButtonStyle = ElevatedButton.styleFrom(
     backgroundColor: Colors.white,

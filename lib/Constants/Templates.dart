@@ -7,8 +7,8 @@ import 'appStyles.dart';
 class MyButtons {
   static Widget backButton(BuildContext context) {
     return IconButton(
-      icon: const Icon(Icons.arrow_back_ios_new_outlined),
-      color: Colors.white,
+      icon: const Icon(Icons.arrow_back),
+      color: buttonColor,
       onPressed: () => Navigator.of(context).pop(),
     );
   }
@@ -37,7 +37,7 @@ class MyButtons {
     );
   }
 
-  static Widget bigButton(
+  static Widget largeButton(
       BuildContext context, String text, Function() onPressed) {
     return Container(
       height: 45,
@@ -54,8 +54,15 @@ class MyButtons {
     );
   }
 
-  Widget summaButton(Function()? onPressed) {
-    return TextButton(onPressed: onPressed, child: const Text('Summa Button'));
+  Widget testButton(String text, Function()? onPressed) {
+    return TextButton(
+      onPressed: onPressed,
+      style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(buttonColor)),
+      child: Text(
+        text,
+        style: AppStyles.mediumBlackTextStyle(isBold: true),
+      ),
+    );
   }
 }
 

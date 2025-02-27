@@ -1,64 +1,120 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:graphview/GraphView.dart';
-import 'package:http/http.dart' as http;
+import 'package:network_simulator/Constants/Templates.dart';
+import 'package:network_simulator/Constants/appStyles.dart';
+import 'package:network_simulator/Constants/constants.dart';
+import 'package:network_simulator/Services/mininet_service.dart';
+import 'package:network_simulator/TopologyWidgets/fat_tree.dart';
+import 'package:network_simulator/TopologyWidgets/mesh.dart';
 
 class TopologyScreen extends StatefulWidget {
-  const TopologyScreen({super.key});
+  final Map<String, dynamic> data;
+  final String topo;
+  const TopologyScreen({super.key, required this.data, required this.topo});
 
   @override
   _TopologyScreenState createState() => _TopologyScreenState();
 }
 
 class _TopologyScreenState extends State<TopologyScreen> {
-  Graph graph = Graph()..isTree = false;
+  final Graph graph = Graph();
+  final BuchheimWalkerConfiguration builder = BuchheimWalkerConfiguration();
 
-  Future<void> fetchTopology() async {
-    final response = await http.post(
-      Uri.parse('http://127.0.0.1:5000/generate_topology'),
-      body: jsonEncode({"switches": 3, "hosts": 6}),
-      headers: {"Content-Type": "application/json"},
-    );
+  final mininetServise = MininetService();
 
-    if (response.statusCode == 200) {
-      var data = jsonDecode(response.body);
-      List nodes = data['nodes'];
-      List edges = data['edges'];
-
-      Map<String, Node> nodeMap = {};
-
-      for (var node in nodes) {
-        nodeMap[node] = Node.Id(node);
-        graph.addNode(nodeMap[node]!);
-      }
-
-      for (var edge in edges) {
-        graph.addEdge(nodeMap[edge[0]]!, nodeMap[edge[1]]!);
-      }
-
-      setState(() {});
-    }
-  }
+  Map<String, Widget> topo(Map<String, dynamic> res) => {
+        'fattree': FatTreeTopology(
+          mininetResponse: res,
+        ),
+        'mesh': MeshTopology(
+          mininetResponse: res,
+        )
+      };
 
   @override
   void initState() {
     super.initState();
-    fetchTopology();
+  }
+
+  void buildGraph() {
+    final topology = widget.data['topology'];
+
+    List<String> hosts = List<String>.from(topology["hosts"]);
+    List<String> switches = List<String>.from(topology["switches"]);
+    List<List<String>> links = List<List<String>>.from(topology["links"]);
+
+    Map<String, Node> nodeMap = {}; // To store created nodes
+
+    // Create nodes for hosts and switches
+    for (String host in hosts) {
+      nodeMap[host] = Node.Id(host);
+      graph.addNode(nodeMap[host]!);
+    }
+    for (String switchNode in switches) {
+      nodeMap[switchNode] = Node.Id(switchNode);
+      graph.addNode(nodeMap[switchNode]!);
+    }
+
+    // Add links (edges) between nodes
+    for (var link in links) {
+      String node1 = link[0];
+      String node2 = link[1];
+
+      if (nodeMap.containsKey(node1) && nodeMap.containsKey(node2)) {
+        graph.addEdge(nodeMap[node1]!, nodeMap[node2]!);
+      }
+    }
+
+    // Configure graph layout
+    builder
+      ..siblingSeparation = (100)
+      ..levelSeparation = (150)
+      ..subtreeSeparation = (150)
+      ..orientation = BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: InteractiveViewer(
-        constrained: false,
-        child: GraphView(
-          graph: graph,
-          algorithm: FruchtermanReingoldAlgorithm(),
-          builder: (Node node) {
-            return const SizedBox();
-          },
+    return Scaffold(
+      appBar: AppBar(
+        leading: MyButtons.backButton(context),
+        title: Text(
+          'Topology Screen',
+          style: AppStyles.mediumBlackTextStyle(isBold: true),
         ),
+        backgroundColor: bgColor,
+      ),
+      body: SingleChildScrollView(
+        child: Center(
+          child: Column(
+            children: [
+              MyButtons.largeButton(context, 'Ping All', () {
+                mininetServise.executeCommand('pingall');
+              }),
+              gapeBox,
+              MyButtons.largeButton(context, 'Stop Mininet', () {
+                mininetServise.stopMininet();
+              }),
+              gapeBox,
+              SizedBox(height: 500, child: topo(widget.data)[widget.topo]),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget networkNode(String label) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: label.startsWith('s') ? Colors.orange : Colors.green,
+        shape: BoxShape.circle,
+      ),
+      child: Text(
+        label,
+        style:
+            const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
       ),
     );
   }

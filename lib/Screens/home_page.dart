@@ -2,10 +2,12 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:network_simulator/Constants/Templates.dart';
 import 'package:network_simulator/Constants/appStyles.dart';
 import 'package:network_simulator/Constants/constants.dart';
+import 'package:network_simulator/Screens/topology_screen.dart';
+import 'package:network_simulator/Services/mininet_service.dart';
+import 'package:network_simulator/Utils/topo_utils.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
@@ -15,111 +17,24 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List<String> deviceCategories = [
-    'Network Devices',
-    'End Devices',
-    'Connections',
-    'Other Devices'
-  ];
+  Map<String, Map<String, int>> topoLimits = TopoUtils.topologyLimits;
 
-  int routerCount = 0;
-  int switchCount = 0;
-  int hostsCount = 0;
+  int switchCount = 1;
+  int hostsCount = 1;
 
   String? selectedTopology;
 
+  int maxSwitches = 0;
+  int maxHosts = 0;
+
   final _formKey = GlobalKey<FormState>();
   bool isLoading = false;
+  String mininetStatus = "Waiting for updates...";
+  final mininetServise = MininetService();
 
-  // void showGridModal(BuildContext context) {
-  //   showModalBottomSheet(
-  //     sheetAnimationStyle: AnimationStyle(
-  //         curve: Easing.legacy, duration: const Duration(seconds: 1)),
-  //     context: context,
-  //     isScrollControlled: true,
-  //     shape: const RoundedRectangleBorder(
-  //       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-  //     ),
-  //     builder: (context) {
-  //       return Column(
-  //         children: [
-  //           const ListTile(
-  //             title: Text('Select a device for the network'),
-  //           ),
-  //           Container(
-  //             alignment: Alignment.center,
-  //             padding: const EdgeInsets.all(16),
-  //             height: heightPercentage(50, context),
-  //             width: widthPercentage(80, context),
-  //             child: GridView.builder(
-  //               shrinkWrap: true,
-  //               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-  //                   crossAxisCount: 3,
-  //                   crossAxisSpacing: 8,
-  //                   mainAxisSpacing: 8,
-  //                   childAspectRatio: 1.0),
-  //               itemCount: deviceCategories.length,
-  //               itemBuilder: (context, index) {
-  //                 return Container(
-  //                   height: 50,
-  //                   width: 50,
-  //                   decoration: BoxDecoration(
-  //                     color: Colors.black54,
-  //                     borderRadius: BorderRadius.circular(8),
-  //                   ),
-  //                   constraints:
-  //                       const BoxConstraints(maxHeight: 50, maxWidth: 50),
-  //                   child: TextButton(
-  //                     isSemanticButton: false,
-  //                     onPressed: () {
-  //                       setState(() {});
-  //                       Navigator.pop(context);
-  //                     },
-  //                     child: Container(
-  //                       alignment: Alignment.center,
-  //                       child: Text(
-  //                         deviceCategories[index],
-  //                         textAlign: TextAlign.center,
-  //                         style: AppStyles.mediumWhiteTextStyle(),
-  //                       ),
-  //                     ),
-  //                   ),
-  //                 );
-  //               },
-  //             ),
-  //           ),
-  //         ],
-  //       );
-  //     },
-  //   );
-  // }
-
-  Future<int> sendDeviceCounts(int switches, int routers, int hosts) async {
-    final url = Uri.parse("http://127.0.0.1:8000/get_device_counts");
-    int statusCode = 0;
-    try {
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "switches": switches,
-          "routers": routers,
-          "hosts": hosts,
-        }),
-      );
-      statusCode = response.statusCode;
-      if (response.statusCode == 200) {
-        log("Device counts sent successfully!");
-      } else {
-        log("Failed to send device counts: ${response.body}");
-      }
-      return response.statusCode;
-    } catch (e) {
-      log(e.toString());
-    } finally {
-      if (mounted) MyDialogs.closeDialog(context);
-    }
-    return statusCode;
+  @override
+  void initState() {
+    super.initState();
   }
 
   @override
@@ -142,68 +57,16 @@ class _MyHomePageState extends State<MyHomePage> {
             child: ListView(
               children: [
                 Text(
-                  'Enter the number of devices you need',
+                  'Create a new lan network',
                   style: AppStyles.mediumBlackTextStyle(),
+                  textAlign: TextAlign.center,
                 ),
                 gapeBox,
                 // Gape Container
-                gapeContainer('Router Count'),
-                MyInputFields.textField(
-                  context,
-                  (val) {
-                    if (val!.isEmpty) return 'Field cannot be empty';
-                    return null;
-                  },
-                  3,
-                  '',
-                  (val) {
-                    setState(() {
-                      routerCount = int.tryParse(val)!;
-                    });
-                  },
-                  type: TextInputType.number,
-                ),
 
-                gapeContainer('Switch Count'),
-                MyInputFields.textField(
-                    context,
-                    (val) {
-                      if (val!.isEmpty) return 'Field cannot be empty';
-
-                      return null;
-                    },
-                    3,
-                    '',
-                    (val) {
-                      setState(() {
-                        switchCount = int.tryParse(val)!;
-                      });
-                    },
-                    type: TextInputType.number),
-                gapeContainer('Hosts Count'),
-                MyInputFields.textField(
-                    context,
-                    (val) {
-                      if (val!.isEmpty) return 'Field cannot be empty';
-
-                      return null;
-                    },
-                    3,
-                    '',
-                    (val) {
-                      setState(() {
-                        hostsCount = int.tryParse(val)!;
-                      });
-                    },
-                    type: TextInputType.number),
                 gapeContainer('Select your topology'),
-                Container(
-                    decoration: BoxDecoration(
-                        color: textfieldBGColor,
-                        border: Border.all(color: Colors.black54),
-                        borderRadius: BorderRadius.circular(15)),
+                SizedBox(
                     width: textFieldWidth(context),
-                    height: 50,
                     child: DropdownButtonFormField(
                         value: selectedTopology,
                         icon: const Icon(
@@ -217,11 +80,21 @@ class _MyHomePageState extends State<MyHomePage> {
                             style: AppStyles.smallBlackTextStyle(isBold: false),
                           ),
                         ),
-                        decoration: const InputDecoration(
-                          enabledBorder:
-                              OutlineInputBorder(borderSide: BorderSide.none),
-                          focusedBorder:
-                              OutlineInputBorder(borderSide: BorderSide.none),
+                        decoration: InputDecoration(
+                          fillColor: textfieldBGColor,
+                          filled: true,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: const BorderSide(color: Colors.black54),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: const BorderSide(color: Colors.black54),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: const BorderSide(color: Colors.black54),
+                          ),
                         ),
                         dropdownColor: Colors.white,
                         validator: (value) {
@@ -231,16 +104,68 @@ class _MyHomePageState extends State<MyHomePage> {
                           return null;
                         },
                         items: [
-                          myDropdownItem('tree', 'Tree Topology'),
+                          myDropdownItem('tree', 'Fat Tree Topology'),
                           myDropdownItem('mesh', 'Mesh Topology'),
-                          myDropdownItem(
-                              'auto', 'Select topology automatically'),
+                          // myDropdownItem('tree', 'Tree Topology'),
+                          myDropdownItem('custom', 'Custom Topology'),
                         ],
                         onChanged: (val) {
                           setState(() {
                             selectedTopology = val;
+                            maxHosts = TopoUtils
+                                .topologyLimits[selectedTopology]!["maxHosts"]!;
+                            maxSwitches = TopoUtils.topologyLimits[
+                                selectedTopology]!["maxSwitches"]!;
+                            if (switchCount > maxSwitches) {
+                              switchCount = maxSwitches;
+                            } else if (hostsCount > maxHosts) {
+                              hostsCount = maxHosts;
+                            }
                           });
+                          log('Max Switches: $maxSwitches \n Max Hosts: $maxHosts');
                         })),
+                gapeBox,
+                // if (maxSwitches != 0 && selectedTopology != 'tree')
+                //   gapeContainer('Number of switches  $switchCount'),
+                // if (maxSwitches != 0 && selectedTopology != 'tree')
+                //   Slider(
+                //     label: switchCount.toString(),
+                //     min: 1,
+                //     max: maxSwitches.toDouble(),
+                //     divisions: maxSwitches,
+                //     value: switchCount.clamp(1, maxSwitches).toDouble(),
+                //     onChanged: (value) {
+                //       setState(() {
+                //         switchCount = value.toInt();
+                //       });
+                //     },
+                //     thumbColor: Colors.black,
+                //     overlayColor: const WidgetStatePropertyAll(Colors.grey),
+                //     activeColor: buttonColor,
+                //     inactiveColor: Colors.grey,
+                //     secondaryActiveColor: Colors.black,
+                //   ),
+                gapeBox,
+                if (maxSwitches != 0)
+                  gapeContainer('Number of hosts $hostsCount'),
+                if (maxSwitches != 0)
+                  Slider(
+                    min: 1,
+                    max: maxHosts.toDouble(),
+                    label: hostsCount.toString(),
+                    divisions: maxHosts - 1,
+                    value: hostsCount.clamp(1, maxHosts).toDouble(),
+                    onChanged: (value) {
+                      setState(() {
+                        hostsCount = value.toInt();
+                      });
+                    },
+                    thumbColor: Colors.black,
+                    overlayColor: const WidgetStatePropertyAll(Colors.grey),
+                    activeColor: buttonColor,
+                    inactiveColor: Colors.grey,
+                    secondaryActiveColor: Colors.black,
+                  ),
               ],
             ),
           ),
@@ -250,7 +175,7 @@ class _MyHomePageState extends State<MyHomePage> {
         height: 55,
         alignment: Alignment.center,
         width: textFieldWidth(context),
-        child: MyButtons.bigButton(context, 'Send to Server', () async {
+        child: MyButtons.largeButton(context, 'Send to Server', () async {
           final isValid = _formKey.currentState!.validate();
 
           if (!isValid) {
@@ -259,10 +184,42 @@ class _MyHomePageState extends State<MyHomePage> {
           _formKey.currentState!.save();
           if (!context.mounted) return;
           MyDialogs.loadingStart(context);
-          await sendDeviceCounts(switchCount, routerCount, hostsCount);
-          log(routerCount.toString());
-          log(switchCount.toString());
-          log(hostsCount.toString());
+
+          try {
+            mininetServise.startMininet(
+                hostsCount, switchCount, selectedTopology!);
+
+            mininetServise.listenToResponses((response) {
+              log(response.runtimeType.toString());
+              final res = jsonDecode(response);
+              log("Mininet Responsee: $response");
+              if (res['status'] == 'success') {
+                log(res['message']);
+                log(res['topology'].toString());
+                Navigator.of(context).pop();
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => TopologyScreen(
+                              data: res,
+                              topo: selectedTopology!,
+                            )));
+              } else if (res['status'] == 'failure') {
+                log(res['message']);
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(res['message'].toString()),
+                ));
+              } else if (res['status'] == 'error') {
+                log('an error occured: ');
+                log(res['message']);
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(res['message'].toString()),
+                ));
+              }
+            });
+          } catch (e) {
+            log('Error: $e');
+          }
         }),
       ),
     );
@@ -271,12 +228,17 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget gapeContainer(String text) => Container(
         alignment: Alignment.centerLeft,
         width: textFieldWidth(context),
-        height: gapeHeight - 13,
+        height: gapeHeight + 15,
         padding: const EdgeInsets.only(bottom: 5),
         child: Text(text,
             textAlign: TextAlign.left,
-            style: AppStyles.smallBlackTextStyle(isBold: true)),
+            style: AppStyles.mediumBlackTextStyle(isBold: true)),
       );
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
 }
 
 DropdownMenuItem<String> myDropdownItem(String val, String text) {
