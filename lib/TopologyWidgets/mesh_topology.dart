@@ -12,8 +12,10 @@ class MeshTopology extends StatefulWidget {
 
 class _MeshTopologyState extends State<MeshTopology> {
   final Graph graph = Graph()..isTree = false;
-  final SugiyamaConfiguration builder = SugiyamaConfiguration();
+  final FruchtermanReingoldAlgorithm builder = FruchtermanReingoldAlgorithm();
   late TransformationController transformationController;
+
+  Color nodeColor = Colors.green;
 
   @override
   void initState() {
@@ -25,7 +27,9 @@ class _MeshTopologyState extends State<MeshTopology> {
 
   void _adjustGraphScale() {
     Size screenSize = MediaQuery.of(context).size;
-    double scale = (screenSize.width / 1000).clamp(0.5, 1.0);
+    double scaleX = screenSize.width / 1000;
+    double scaleY = screenSize.height / 1000;
+    double scale = scaleX < scaleY ? scaleX : scaleY;
     transformationController.value = Matrix4.identity()..scale(scale, scale);
   }
 
@@ -33,16 +37,9 @@ class _MeshTopologyState extends State<MeshTopology> {
     var response = widget.mininetResponse;
     var topology = response["topology"];
     List<String> hosts = List<String>.from(topology["hosts"]);
-    List<String> switches = List<String>.from(topology["switches"]);
     List<List<dynamic>> links = List<List<dynamic>>.from(topology["links"]);
 
     Map<String, Node> nodes = {};
-
-    for (var switchNode in switches) {
-      nodes[switchNode] = Node.Id(switchNode);
-      graph.addNode(nodes[switchNode]!);
-    }
-
     for (var host in hosts) {
       nodes[host] = Node.Id(host);
       graph.addNode(nodes[host]!);
@@ -68,7 +65,8 @@ class _MeshTopologyState extends State<MeshTopology> {
       transformationController: transformationController,
       child: GraphView(
         graph: graph,
-        algorithm: SugiyamaAlgorithm(builder),
+        algorithm:
+            FruchtermanReingoldAlgorithm(attractionRate: 0, repulsionRate: 0),
         paint: Paint()..color = Colors.blue,
         builder: (Node node) {
           String label = node.key!.value.toString();
@@ -79,16 +77,23 @@ class _MeshTopologyState extends State<MeshTopology> {
   }
 
   Widget networkNode(String label) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: label.startsWith('s') ? Colors.orange : Colors.green,
-        shape: BoxShape.circle,
-      ),
-      child: Text(
-        label,
-        style:
-            const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          nodeColor = Colors.blue;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: nodeColor,
+          shape: BoxShape.circle,
+        ),
+        child: Text(
+          label,
+          style:
+              const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }

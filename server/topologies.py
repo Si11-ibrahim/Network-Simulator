@@ -43,24 +43,18 @@ class RingTopo(Topo):
 class MeshTopo(Topo):
     def __init__(self, num_hosts):
         super(MeshTopo, self).__init__()
-
-        # Create switches
-        switches = []
-        for i in range(num_hosts):
-            switch = self.addSwitch(f's{i+1}')
-            switches.append(switch)
-
-        # Create hosts and link them to switches
+        # Create hosts
         hosts = []
         for i in range(num_hosts):
             host = self.addHost(f'h{i+1}')
-            self.addLink(host, switches[i])
             hosts.append(host)
 
-        # Fully connect all switches (Mesh topology)
+        # Fully connect all hosts (Mesh topology)
         for i in range(num_hosts):
             for j in range(i + 1, num_hosts):
-                self.addLink(switches[i], switches[j])
+                self.addLink(hosts[i], hosts[j])
+
+
 
 
 class FatTree(Topo):

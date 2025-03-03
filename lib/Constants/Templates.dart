@@ -9,7 +9,7 @@ class MyButtons {
     return IconButton(
       icon: const Icon(Icons.arrow_back),
       color: buttonColor,
-      onPressed: () => Navigator.of(context).pop(),
+      onPressed: () => Navigator.pop(context),
     );
   }
 

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:graphview/GraphView.dart';
 import 'package:network_simulator/Constants/Templates.dart';
 import 'package:network_simulator/Constants/appStyles.dart';
 import 'package:network_simulator/Constants/constants.dart';
 import 'package:network_simulator/Services/mininet_service.dart';
 import 'package:network_simulator/TopologyWidgets/fat_tree.dart';
-import 'package:network_simulator/TopologyWidgets/mesh.dart';
+import 'package:network_simulator/TopologyWidgets/mesh_topology.dart';
 
 class TopologyScreen extends StatefulWidget {
   final Map<String, dynamic> data;
@@ -17,9 +16,6 @@ class TopologyScreen extends StatefulWidget {
 }
 
 class _TopologyScreenState extends State<TopologyScreen> {
-  final Graph graph = Graph();
-  final BuchheimWalkerConfiguration builder = BuchheimWalkerConfiguration();
-
   final mininetServise = MininetService();
 
   Map<String, Widget> topo(Map<String, dynamic> res) => {
@@ -36,43 +32,6 @@ class _TopologyScreenState extends State<TopologyScreen> {
     super.initState();
   }
 
-  void buildGraph() {
-    final topology = widget.data['topology'];
-
-    List<String> hosts = List<String>.from(topology["hosts"]);
-    List<String> switches = List<String>.from(topology["switches"]);
-    List<List<String>> links = List<List<String>>.from(topology["links"]);
-
-    Map<String, Node> nodeMap = {}; // To store created nodes
-
-    // Create nodes for hosts and switches
-    for (String host in hosts) {
-      nodeMap[host] = Node.Id(host);
-      graph.addNode(nodeMap[host]!);
-    }
-    for (String switchNode in switches) {
-      nodeMap[switchNode] = Node.Id(switchNode);
-      graph.addNode(nodeMap[switchNode]!);
-    }
-
-    // Add links (edges) between nodes
-    for (var link in links) {
-      String node1 = link[0];
-      String node2 = link[1];
-
-      if (nodeMap.containsKey(node1) && nodeMap.containsKey(node2)) {
-        graph.addEdge(nodeMap[node1]!, nodeMap[node2]!);
-      }
-    }
-
-    // Configure graph layout
-    builder
-      ..siblingSeparation = (100)
-      ..levelSeparation = (150)
-      ..subtreeSeparation = (150)
-      ..orientation = BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -87,6 +46,7 @@ class _TopologyScreenState extends State<TopologyScreen> {
       body: SingleChildScrollView(
         child: Center(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               MyButtons.largeButton(context, 'Ping All', () {
                 mininetServise.executeCommand('pingall');
@@ -94,9 +54,16 @@ class _TopologyScreenState extends State<TopologyScreen> {
               gapeBox,
               MyButtons.largeButton(context, 'Stop Mininet', () {
                 mininetServise.stopMininet();
+                MyDialogs.loadingStart(context);
+                Future.delayed(const Duration(seconds: 3)).then((val) {
+                  Navigator.pop(context);
+                  Navigator.pop(context);
+                });
               }),
               gapeBox,
-              SizedBox(height: 500, child: topo(widget.data)[widget.topo]),
+              SizedBox(
+                  width: widthPercentage(95, context),
+                  child: topo(widget.data)[widget.topo]),
             ],
           ),
         ),

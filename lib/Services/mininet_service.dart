@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class MininetService {
@@ -7,7 +9,11 @@ class MininetService {
       WebSocketChannel.connect(Uri.parse("ws://localhost:8000/ws"));
 
   void startMininet(int hosts, int switches, String topology) {
-    channel.sink.add("start:$hosts:$switches:$topology");
+    try {
+      channel.sink.add("start:$hosts:$switches:$topology");
+    } catch (e) {
+      log('Error starting mininet: $e');
+    }
   }
 
   void stopMininet() {

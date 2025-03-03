@@ -112,6 +112,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         onChanged: (val) {
                           setState(() {
                             selectedTopology = val;
+                            hostsCount = 0;
                             maxHosts = TopoUtils
                                 .topologyLimits[selectedTopology]!["maxHosts"]!;
                             maxSwitches = TopoUtils.topologyLimits[
