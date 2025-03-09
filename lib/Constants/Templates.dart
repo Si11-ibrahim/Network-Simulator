@@ -54,13 +54,18 @@ class MyButtons {
     );
   }
 
-  Widget testButton(String text, Function()? onPressed) {
-    return TextButton(
-      onPressed: onPressed,
-      style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(buttonColor)),
-      child: Text(
-        text,
-        style: AppStyles.mediumBlackTextStyle(isBold: true),
+  static Widget smallButton(String text, Function()? onPressed) {
+    return SizedBox(
+      height: 35,
+      width: 85,
+      child: TextButton(
+        onPressed: onPressed,
+        style:
+            ButtonStyle(backgroundColor: WidgetStatePropertyAll(buttonColor)),
+        child: Text(
+          text,
+          style: AppStyles.mediumBlackTextStyle(isBold: true),
+        ),
       ),
     );
   }
@@ -75,23 +80,17 @@ class MyInputFields {
       Function(String)? onChanged,
       {double height = 80,
       bool expands = false,
-      InputDecoration decoration = const InputDecoration(
-        hintText: '',
-        hintStyle: TextStyle(fontSize: 10, color: Colors.white70),
-        contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(15))),
-        filled: true,
-        fillColor: Colors.white38,
-        helperText: ' ',
-      ),
       double padding = 0,
-      TextInputType type = TextInputType.text}) {
+      TextInputType type = TextInputType.text,
+      Widget? suffix,
+      TextEditingController? controller}) {
     return Container(
+      alignment: Alignment.center,
       width: (textFieldWidth(context)),
       height: height,
       padding: EdgeInsets.all(padding),
       child: TextFormField(
+        controller: controller,
         validator: validator,
         style: AppStyles.mediumBlackTextStyle(),
         inputFormatters: [
@@ -99,12 +98,21 @@ class MyInputFields {
         ],
         onTapOutside: (event) => FocusManager.instance.primaryFocus?.unfocus(),
         onChanged: onChanged,
-        textAlign: TextAlign.start,
         keyboardType: type,
         minLines: null,
         maxLines: null,
         expands: expands,
-        decoration: decoration,
+        decoration: InputDecoration(
+            hintText: '',
+            hintStyle: const TextStyle(fontSize: 10, color: Colors.white70),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+            border: const OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(15))),
+            filled: true,
+            fillColor: textfieldBGColor,
+            helperText: ' ',
+            suffix: suffix),
       ),
     );
   }

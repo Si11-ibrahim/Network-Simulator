@@ -26,11 +26,11 @@ double midFontSize = 15;
 double smallFontSize = 10;
 
 //Colors
-Color bgColor = const Color.fromARGB(255, 190, 255, 250); // Background color
-var buttonColor = const Color.fromARGB(255, 13, 191, 0); // Button Color
-var textColorWhite = Colors.white; // Text color White
-var textColorBlack = Colors.black;
-var textfieldBGColor = Colors.white38; //Text Field BG Color
+Color bgColor = const Color.fromARGB(255, 30, 32, 30); // Background color
+var buttonColor = const Color.fromARGB(255, 236, 223, 204); // Button Color
+var textfieldBGColor = Colors.amber[200]; // Text Field BG Color
+var textColorBlack = Colors.black; // Text color White
+var textColorWhite = Colors.white;
 
 // Gape Container sizes
 double gapeHeight = 30;

@@ -1,24 +1,20 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:graphview/GraphView.dart';
 
-class MeshTopology extends StatefulWidget {
+class TreeTopology extends StatefulWidget {
   final Map<String, dynamic> mininetResponse;
-  final String? meshType;
 
-  const MeshTopology({super.key, required this.mininetResponse, this.meshType});
+  const TreeTopology({super.key, required this.mininetResponse});
 
   @override
-  _MeshTopologyState createState() => _MeshTopologyState();
+  _TreeTopologyState createState() => _TreeTopologyState();
 }
 
-class _MeshTopologyState extends State<MeshTopology> {
-  final Graph graph = Graph()..isTree = false;
-  late FruchtermanReingoldAlgorithm algorithm;
-  late TransformationController transformationController;
+class _TreeTopologyState extends State<TreeTopology> {
+  final Graph graph = Graph()..isTree = true;
+  final BuchheimWalkerConfiguration builder = BuchheimWalkerConfiguration();
 
-  Color nodeColor = Colors.green;
+  late TransformationController transformationController;
 
   @override
   void initState() {
@@ -30,9 +26,11 @@ class _MeshTopologyState extends State<MeshTopology> {
 
   void _adjustGraphScale() {
     Size screenSize = MediaQuery.of(context).size;
+
     double scaleX = screenSize.width / 1000;
     double scaleY = screenSize.height / 1000;
     double scale = scaleX < scaleY ? scaleX : scaleY;
+
     transformationController.value = Matrix4.identity()..scale(scale, scale);
   }
 
@@ -40,9 +38,16 @@ class _MeshTopologyState extends State<MeshTopology> {
     var response = widget.mininetResponse;
     var topology = response["topology"];
     List<String> hosts = List<String>.from(topology["hosts"]);
+    List<String> switches = List<String>.from(topology["switches"]);
     List<List<dynamic>> links = List<List<dynamic>>.from(topology["links"]);
 
     Map<String, Node> nodes = {};
+
+    for (var switchNode in switches) {
+      nodes[switchNode] = Node.Id(switchNode);
+      graph.addNode(nodes[switchNode]!);
+    }
+
     for (var host in hosts) {
       nodes[host] = Node.Id(host);
       graph.addNode(nodes[host]!);
@@ -56,12 +61,6 @@ class _MeshTopologyState extends State<MeshTopology> {
             paint: Paint()..color = Colors.blue);
       }
     }
-    log(widget.meshType ?? 'Mesh type is null');
-    algorithm = FruchtermanReingoldAlgorithm(
-        iterations: 1000,
-        attractionRate: widget.meshType == 'full' ? 0 : ATTRACTION_RATE,
-        repulsionRate: 0.5,
-        renderer: ArrowEdgeRenderer());
 
     setState(() {});
   }
@@ -69,12 +68,14 @@ class _MeshTopologyState extends State<MeshTopology> {
   @override
   Widget build(BuildContext context) {
     return InteractiveViewer(
-      constrained: true,
-      boundaryMargin: const EdgeInsets.all(50),
+      constrained: false,
+      minScale: 0.08,
+      maxScale: 100,
+      boundaryMargin: const EdgeInsets.all(20),
       transformationController: transformationController,
       child: GraphView(
         graph: graph,
-        algorithm: algorithm,
+        algorithm: BuchheimWalkerAlgorithm(builder, TreeEdgeRenderer(builder)),
         paint: Paint()..color = Colors.blue,
         builder: (Node node) {
           String label = node.key!.value.toString();
@@ -85,18 +86,16 @@ class _MeshTopologyState extends State<MeshTopology> {
   }
 
   Widget networkNode(String label) {
-    return GestureDetector(
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: nodeColor,
-          shape: BoxShape.circle,
-        ),
-        child: Text(
-          label,
-          style:
-              const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: label.startsWith('s') ? Colors.orange : Colors.green,
+        shape: BoxShape.circle,
+      ),
+      child: Text(
+        label,
+        style:
+            const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
       ),
     );
   }

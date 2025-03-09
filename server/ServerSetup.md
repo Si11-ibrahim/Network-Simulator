@@ -57,7 +57,5 @@ Error handling:
 	If mininet stuck in starting switches, run:
 		>>> sudo ovs-vswitchd --pidfile --detach
 
-
-
-
-
+	If address already in use error:
+		>>> sudo lsof -t -i tcp:8000 | xargs kill -9

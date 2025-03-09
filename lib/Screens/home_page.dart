@@ -24,6 +24,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   String? selectedTopology;
 
+  String? meshType;
+
   int maxSwitches = 0;
   int maxHosts = 0;
 
@@ -40,13 +42,6 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white54,
-        title: Text(
-          'LAN Network Graphic Editor Practice',
-          style: AppStyles.mediumBlackTextStyle(),
-        ),
-      ),
       body: Center(
         child: Form(
           key: _formKey,
@@ -58,7 +53,7 @@ class _MyHomePageState extends State<MyHomePage> {
               children: [
                 Text(
                   'Create a new lan network',
-                  style: AppStyles.mediumBlackTextStyle(),
+                  style: AppStyles.headerText3Style,
                   textAlign: TextAlign.center,
                 ),
                 gapeBox,
@@ -81,6 +76,8 @@ class _MyHomePageState extends State<MyHomePage> {
                           ),
                         ),
                         decoration: InputDecoration(
+                          errorStyle:
+                              const TextStyle(fontWeight: FontWeight.bold),
                           fillColor: textfieldBGColor,
                           filled: true,
                           border: OutlineInputBorder(
@@ -96,18 +93,18 @@ class _MyHomePageState extends State<MyHomePage> {
                             borderSide: const BorderSide(color: Colors.black54),
                           ),
                         ),
-                        dropdownColor: Colors.white,
+                        dropdownColor: buttonColor,
                         validator: (value) {
                           if (value == null) {
-                            return 'You should your preference';
+                            return 'You must select a topology';
                           }
                           return null;
                         },
                         items: [
-                          myDropdownItem('fattree', 'Fat Tree Topology'),
+                          myDropdownItem('tree', 'Tree Topology'),
                           myDropdownItem('mesh', 'Mesh Topology'),
-                          // myDropdownItem('tree', 'Tree Topology'),
-                          myDropdownItem('custom', 'Custom Topology'),
+                          myDropdownItem('fattree', 'Fat Tree Topology'),
+                          // myDropdownItem('custom', 'Custom Topology'),
                         ],
                         onChanged: (val) {
                           setState(() {
@@ -126,26 +123,61 @@ class _MyHomePageState extends State<MyHomePage> {
                           log('Max Switches: $maxSwitches \n Max Hosts: $maxHosts');
                         })),
                 gapeBox,
-                // if (maxSwitches != 0 && selectedTopology != 'tree')
-                //   gapeContainer('Number of switches  $switchCount'),
-                // if (maxSwitches != 0 && selectedTopology != 'tree')
-                //   Slider(
-                //     label: switchCount.toString(),
-                //     min: 1,
-                //     max: maxSwitches.toDouble(),
-                //     divisions: maxSwitches,
-                //     value: switchCount.clamp(1, maxSwitches).toDouble(),
-                //     onChanged: (value) {
-                //       setState(() {
-                //         switchCount = value.toInt();
-                //       });
-                //     },
-                //     thumbColor: Colors.black,
-                //     overlayColor: const WidgetStatePropertyAll(Colors.grey),
-                //     activeColor: buttonColor,
-                //     inactiveColor: Colors.grey,
-                //     secondaryActiveColor: Colors.black,
-                //   ),
+                if (selectedTopology == 'mesh')
+                  gapeContainer('Select the type of mesh'),
+                if (selectedTopology == 'mesh')
+                  SizedBox(
+                      width: textFieldWidth(context) - 10,
+                      child: DropdownButtonFormField(
+                          value: meshType,
+                          icon: const Icon(
+                            Icons.keyboard_arrow_down_sharp,
+                            color: Colors.black,
+                          ),
+                          hint: Padding(
+                            padding: const EdgeInsets.only(left: 15),
+                            child: Text(
+                              "Choose here",
+                              style:
+                                  AppStyles.smallBlackTextStyle(isBold: false),
+                            ),
+                          ),
+                          decoration: InputDecoration(
+                            fillColor: textfieldBGColor,
+                            filled: true,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(15),
+                              borderSide:
+                                  const BorderSide(color: Colors.black54),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(15),
+                              borderSide:
+                                  const BorderSide(color: Colors.black54),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(15),
+                              borderSide:
+                                  const BorderSide(color: Colors.black54),
+                            ),
+                          ),
+                          dropdownColor: buttonColor,
+                          validator: (value) {
+                            if (value == null) {
+                              return 'You must select the Mesh Type';
+                            }
+                            return null;
+                          },
+                          items: [
+                            myDropdownItem('partial', 'Partial Mesh'),
+                            myDropdownItem('full', 'Full Mesh'),
+                          ],
+                          onChanged: (val) {
+                            setState(() {
+                              meshType = val;
+                            });
+                          })),
+                gapeBox,
                 gapeBox,
                 if (maxSwitches != 0)
                   gapeContainer('Number of hosts $hostsCount'),
@@ -161,8 +193,8 @@ class _MyHomePageState extends State<MyHomePage> {
                         hostsCount = value.toInt();
                       });
                     },
-                    thumbColor: Colors.black,
-                    overlayColor: const WidgetStatePropertyAll(Colors.grey),
+                    thumbColor: buttonColor,
+                    overlayColor: const WidgetStatePropertyAll(Colors.white30),
                     activeColor: buttonColor,
                     inactiveColor: Colors.grey,
                     secondaryActiveColor: Colors.black,
@@ -176,7 +208,7 @@ class _MyHomePageState extends State<MyHomePage> {
         height: 55,
         alignment: Alignment.center,
         width: textFieldWidth(context),
-        child: MyButtons.largeButton(context, 'Send to Server', () async {
+        child: MyButtons.largeButton(context, 'Create Network', () async {
           final isValid = _formKey.currentState!.validate();
 
           if (!isValid) {
@@ -187,37 +219,47 @@ class _MyHomePageState extends State<MyHomePage> {
           MyDialogs.loadingStart(context);
 
           try {
-            mininetServise.startMininet(
-                hostsCount, switchCount, selectedTopology!);
-
-            mininetServise.listenToResponses((response) {
-              log(response.runtimeType.toString());
-              final res = jsonDecode(response);
-              log("Mininet Responsee: $response");
-              if (res['status'] == 'success') {
-                log(res['message']);
-                log(res['topology'].toString());
-                Navigator.of(context).pop();
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => TopologyScreen(
-                              data: res,
-                              topo: selectedTopology!,
-                            )));
-              } else if (res['status'] == 'failure') {
-                log(res['message']);
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(res['message'].toString()),
-                ));
-              } else if (res['status'] == 'error') {
-                log('an error occured: ');
-                log(res['message']);
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(res['message'].toString()),
-                ));
-              }
-            });
+            String status = mininetServise.startMininet(
+                hostsCount, switchCount, selectedTopology!, meshType);
+            if (status == 'success') {
+              mininetServise.listenToResponses((response) {
+                log(response.runtimeType.toString());
+                final res = jsonDecode(response);
+                log("Mininet Responsee: $response");
+                if (res['status'] == 'success') {
+                  log(res['message']);
+                  log(res['topology'].toString());
+                  Navigator.of(context).pop();
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => TopologyScreen(
+                                data: res,
+                                topo: selectedTopology!,
+                                meshType: meshType,
+                              )));
+                } else if (res['status'] == 'failure') {
+                  log(res['message']);
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(res['message'].toString()),
+                  ));
+                } else if (res['status'] == 'error') {
+                  log('an error occured: ');
+                  log(res['message']);
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(res['message'].toString()),
+                  ));
+                }
+              });
+            } else if (status == 'error') {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text('Error while starting mininet...')));
+            } else {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Server disconnected...')));
+            }
           } catch (e) {
             log('Error: $e');
           }
@@ -233,7 +275,7 @@ class _MyHomePageState extends State<MyHomePage> {
         padding: const EdgeInsets.only(bottom: 5),
         child: Text(text,
             textAlign: TextAlign.left,
-            style: AppStyles.mediumBlackTextStyle(isBold: true)),
+            style: AppStyles.mediumWhiteTextStyle(isBold: true)),
       );
 
   @override
