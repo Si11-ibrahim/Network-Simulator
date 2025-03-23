@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:network_simulator/Constants/constants.dart';
 
-import 'Screens/home_page.dart';
+import 'Screens/home_screen.dart';
 
 void main() {
   runApp(const MyApp());

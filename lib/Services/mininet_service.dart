@@ -1,34 +1,68 @@
 import 'dart:async';
 import 'dart:developer';
 
+import 'package:flutter/material.dart';
+import 'package:network_simulator/Constants/Templates.dart';
+import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/status.dart' as status;
-import 'package:web_socket_channel/web_socket_channel.dart';
 
 class MininetService {
-  final String mininetUrl = "ws://localhost:8000/ws";
-  WebSocketChannel? channel;
+  final BuildContext context;
+  MininetService(this.context) {
+    _connect();
+  }
+
+  final String mininetUrl = "ws://192.168.1.17:8000/ws";
+  IOWebSocketChannel? channel;
   Timer? _reconnectTimer;
   bool _isConnected = false;
   Function(dynamic)? _responseCallback;
-  MininetService() {
-    _connect(); // Initialize connection
-  }
+  bool isScheduledConnectionRunning = false;
 
   void _connect() {
     try {
-      channel = WebSocketChannel.connect(Uri.parse(mininetUrl));
-      _isConnected = true;
+      channel = IOWebSocketChannel.connect(Uri.parse(mininetUrl));
 
       // Listen for messages
       channel!.stream.listen(
         (message) {
+          _isConnected = true;
+          isScheduledConnectionRunning = false;
           String msg = message.toString().toLowerCase();
           log("Message received: $msg");
-          if (msg.contains('pingall')) {
+          if (msg.split(' ')[0] == 'pingall') {
+            log('Pingall result received...');
             String result = msg.split(':')[1].trim();
             double? dropped = double.tryParse(result);
-            if (dropped != 0 && dropped != null) {
-              log("result: $dropped% packets dropped");
+            if (dropped != null) {
+              log("Pingall Result: $dropped% packets dropped");
+              if (dropped != 0.0) {
+                Navigator.pop(context);
+                MyDialogs.showErrorSnackbar(
+                    context, '$dropped% packets dropped');
+              } else {
+                Navigator.pop(context);
+                MyDialogs.showSuccessSnackbar(
+                    context, 'Pingall success. No packets dropped.');
+              }
+            }
+          }
+          if (msg.split(' ')[0] == 'ping') {
+            log('Pingall result received...');
+            List data = msg.split(' ');
+            String result = data[data.length - 1];
+            String host1 = data[2];
+            String host2 = data[4];
+
+            log("Ping from $host1 to $host2 success");
+            if (result == 'failure') {
+              Navigator.pop(context);
+              MyDialogs.showErrorSnackbar(
+                  context, 'Ping from $host1 to $host2 failed');
+            } else {
+              Navigator.pop(context);
+              MyDialogs.showSuccessSnackbar(
+                  context, 'Ping from $host1 to $host2 success');
             }
           }
           if (_responseCallback != null) {
@@ -38,18 +72,27 @@ class MininetService {
         onDone: () {
           log("WebSocket closed, attempting to reconnect...");
           _isConnected = false;
-          _scheduleReconnect();
+          if (!isScheduledConnectionRunning) {
+            _scheduleReconnect();
+            isScheduledConnectionRunning = true;
+          }
         },
         onError: (error) {
           log("WebSocket error: $error");
           _isConnected = false;
-          _scheduleReconnect();
+          if (!isScheduledConnectionRunning) {
+            _scheduleReconnect();
+            isScheduledConnectionRunning = true;
+          }
         },
       );
     } catch (e) {
       log("WebSocket connection error: $e");
       _isConnected = false;
-      _scheduleReconnect();
+      if (!isScheduledConnectionRunning) {
+        _scheduleReconnect();
+        isScheduledConnectionRunning = true;
+      }
     }
   }
 
@@ -73,17 +116,20 @@ class MininetService {
         return 'error';
       }
     } else {
-      log("WebSocket not connected, cannot send data.");
       return 'disconnected';
     }
   }
 
   void stopMininet() {
-    channel?.sink.add("stop");
+    if (_isConnected) channel?.sink.add("stop");
   }
 
   void executeCommand(String command) {
-    channel?.sink.add("exec:$command");
+    if (_isConnected) {
+      channel?.sink.add("exec:$command");
+    } else {
+      MyDialogs.showErrorSnackbar(context, 'Server disconnected...');
+    }
   }
 
   void listenToResponses(Function(dynamic) callback) {

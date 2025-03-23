@@ -59,8 +59,8 @@ class _MeshTopologyState extends State<MeshTopology> {
     log(widget.meshType ?? 'Mesh type is null');
     algorithm = FruchtermanReingoldAlgorithm(
         iterations: 1000,
-        attractionRate: widget.meshType == 'full' ? 0 : ATTRACTION_RATE,
-        repulsionRate: 0.5,
+        attractionRate: widget.meshType == 'full' ? 0 : 0.1,
+        repulsionRate: widget.meshType == 'full' ? 0.5 : 1,
         renderer: ArrowEdgeRenderer());
 
     setState(() {});

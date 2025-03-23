@@ -138,4 +138,28 @@ class MyDialogs {
   static void closeDialog(BuildContext context) {
     Navigator.of(context).pop();
   }
+
+  static showErrorSnackbar(BuildContext context, String text) {
+    return ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        duration: const Duration(seconds: 3),
+        backgroundColor: Colors.red,
+        content: Text(
+          text,
+          style: const TextStyle(
+            color: Colors.white,
+          ),
+        )));
+  }
+
+  static showSuccessSnackbar(BuildContext context, String text) {
+    return ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        backgroundColor: textfieldBGColor,
+        duration: const Duration(seconds: 5),
+        content: Text(
+          text,
+          style: const TextStyle(
+            color: Colors.black,
+          ),
+        )));
+  }
 }

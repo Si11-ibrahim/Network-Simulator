@@ -19,8 +19,6 @@ class TopologyScreen extends StatefulWidget {
 }
 
 class _TopologyScreenState extends State<TopologyScreen> {
-  final mininetServise = MininetService();
-
   TextEditingController commandController = TextEditingController();
 
   Map<String, Widget> topo(Map<String, dynamic> res) => {
@@ -48,6 +46,7 @@ class _TopologyScreenState extends State<TopologyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final mininetServise = MininetService(context);
     return Scaffold(
       appBar: AppBar(
         // leading: MyButtons.backButton(context),
@@ -83,9 +82,7 @@ class _TopologyScreenState extends State<TopologyScreen> {
                       100,
                       'type here',
                       (val) {
-                        setState(() {
-                          commandController.value = TextEditingValue(text: val);
-                        });
+                        commandController.value = TextEditingValue(text: val);
                       },
                       suffix: IconButton(
                           onPressed: () {
@@ -95,6 +92,7 @@ class _TopologyScreenState extends State<TopologyScreen> {
                               setState(() {
                                 commandController.clear();
                               });
+                              MyDialogs.loadingStart(context);
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
@@ -106,7 +104,7 @@ class _TopologyScreenState extends State<TopologyScreen> {
               ),
               gapeBox,
               Container(
-                  margin: const EdgeInsets.all(10),
+                  margin: const EdgeInsets.all(5),
                   height:
                       //  widget.topo == 'mesh' ? null :
                       500,

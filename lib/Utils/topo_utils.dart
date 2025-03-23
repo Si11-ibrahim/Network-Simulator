@@ -8,7 +8,7 @@ class TopoUtils {
   static const Map<String, Map<String, int>> topologyLimits = {
     "star": {"maxSwitches": 1, "maxHosts": 100},
     "ring": {"maxSwitches": 50, "maxHosts": 20},
-    "mesh": {"maxSwitches": 6, "maxHosts": 50},
+    "mesh": {"maxSwitches": 6, "maxHosts": 35},
     "tree": {"maxSwitches": 9, "maxHosts": 48},
     "bus": {"maxSwitches": 1, "maxHosts": 20},
     "custom": {"maxSwitches": 20, "maxHosts": 100},

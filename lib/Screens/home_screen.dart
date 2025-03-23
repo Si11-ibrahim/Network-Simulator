@@ -32,7 +32,6 @@ class _MyHomePageState extends State<MyHomePage> {
   final _formKey = GlobalKey<FormState>();
   bool isLoading = false;
   String mininetStatus = "Waiting for updates...";
-  final mininetServise = MininetService();
 
   @override
   void initState() {
@@ -41,6 +40,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final mininetServise = MininetService(context);
+
     return Scaffold(
       body: Center(
         child: Form(
@@ -221,6 +222,8 @@ class _MyHomePageState extends State<MyHomePage> {
           try {
             String status = mininetServise.startMininet(
                 hostsCount, switchCount, selectedTopology!, meshType);
+            log(status.toString());
+
             if (status == 'success') {
               mininetServise.listenToResponses((response) {
                 log(response.runtimeType.toString());
@@ -240,9 +243,8 @@ class _MyHomePageState extends State<MyHomePage> {
                               )));
                 } else if (res['status'] == 'failure') {
                   log(res['message']);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text(res['message'].toString()),
-                  ));
+                  MyDialogs.showErrorSnackbar(
+                      context, res['message'].toString());
                 } else if (res['status'] == 'error') {
                   log('an error occured: ');
                   log(res['message']);
@@ -257,8 +259,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   content: Text('Error while starting mininet...')));
             } else {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Server disconnected...')));
+              MyDialogs.showErrorSnackbar(
+                  context, 'Server is not connected...');
             }
           } catch (e) {
             log('Error: $e');
