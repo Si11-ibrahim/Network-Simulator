@@ -9,7 +9,7 @@ class AppStyles {
         fontWeight: isBold ? FontWeight.bold : null,
         fontSize: smallFontSize,
       );
-  static TextStyle smallBlackTextStyle({isBold = false}) => TextStyle(
+  static TextStyle smallBlackTextStyle({bool isBold = false}) => TextStyle(
         color: textColorBlack,
         fontSize: smallFontSize,
         fontWeight: isBold ? FontWeight.bold : null,
@@ -33,10 +33,11 @@ class AppStyles {
         fontSize: bigFontSize,
       );
 
-  static final TextStyle bigBlackTextStyle = TextStyle(
-    color: textColorBlack,
-    fontSize: bigFontSize,
-  );
+  static TextStyle bigBlackTextStyle({bool isBold = false}) => TextStyle(
+        color: textColorBlack,
+        fontSize: bigFontSize,
+        fontWeight: isBold ? FontWeight.bold : null,
+      );
   static final TextStyle hugeWhiteTextStyle = TextStyle(
     color: textColorWhite,
     fontWeight: FontWeight.bold,
@@ -77,7 +78,7 @@ class AppStyles {
   static final ButtonStyle smallButtonStyle = ElevatedButton.styleFrom(
     backgroundColor: buttonColor,
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    textStyle: mediumWhiteTextStyle(),
+    textStyle: mediumWhiteTextStyle(isBold: true),
   );
   static final ButtonStyle smallWhiteButtonStyle = ElevatedButton.styleFrom(
     backgroundColor: Colors.white,

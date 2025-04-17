@@ -48,24 +48,28 @@ class MyButtons {
         onPressed: onPressed,
         child: Text(
           text,
-          style: AppStyles.mediumBlackTextStyle(),
+          style: AppStyles.mediumBlackTextStyle(isBold: true),
         ),
       ),
     );
   }
 
-  static Widget smallButton(String text, Function()? onPressed) {
-    return SizedBox(
-      height: 35,
-      width: 85,
+  static Widget smallButton(text, Function()? onPressed, BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+          color: buttonColor, borderRadius: BorderRadius.circular(10)),
+      height: 45,
+      width: textFieldWidth(context) * 0.7,
       child: TextButton(
         onPressed: onPressed,
         style:
             ButtonStyle(backgroundColor: WidgetStatePropertyAll(buttonColor)),
-        child: Text(
-          text,
-          style: AppStyles.mediumBlackTextStyle(isBold: true),
-        ),
+        child: text is String
+            ? Text(
+                text,
+                style: AppStyles.mediumBlackTextStyle(isBold: true),
+              )
+            : text,
       ),
     );
   }
@@ -80,15 +84,15 @@ class MyInputFields {
       Function(String)? onChanged,
       {double height = 80,
       bool expands = false,
-      double padding = 0,
+      EdgeInsets containerPadding = EdgeInsets.zero,
       TextInputType type = TextInputType.text,
       Widget? suffix,
       TextEditingController? controller}) {
     return Container(
-      alignment: Alignment.center,
+      alignment: Alignment.topCenter,
       width: (textFieldWidth(context)),
       height: height,
-      padding: EdgeInsets.all(padding),
+      padding: containerPadding,
       child: TextFormField(
         controller: controller,
         validator: validator,
@@ -103,8 +107,11 @@ class MyInputFields {
         maxLines: null,
         expands: expands,
         decoration: InputDecoration(
-            hintText: '',
-            hintStyle: const TextStyle(fontSize: 10, color: Colors.white70),
+            hintText: hint,
+            hintStyle: const TextStyle(
+              fontSize: 10,
+              color: Colors.white70,
+            ),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
             border: const OutlineInputBorder(
@@ -123,11 +130,24 @@ class MyDialogs {
     showDialog(
       context: context,
       builder: (context) {
-        return const PopScope(
+        return PopScope(
           canPop: false,
           child: Center(
-            child: CircularProgressIndicator(
-              color: Colors.green,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircularProgressIndicator(
+                  color: Colors.green,
+                ),
+                IconButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    icon: const Icon(
+                      Icons.close,
+                      color: Colors.transparent,
+                    ))
+              ],
             ),
           ),
         );

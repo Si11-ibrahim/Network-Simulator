@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 
 class TopoUtils {
   static const Map<String, Map<String, int>> topologyLimits = {
-    "star": {"maxSwitches": 1, "maxHosts": 100},
+    "star": {"maxSwitches": 1, "maxHosts": 20},
     "ring": {"maxSwitches": 50, "maxHosts": 20},
     "mesh": {"maxSwitches": 6, "maxHosts": 35},
     "tree": {"maxSwitches": 9, "maxHosts": 48},

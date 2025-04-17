@@ -3,16 +3,22 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:network_simulator/Constants/Templates.dart';
+import 'package:network_simulator/Services/Provider/server_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:web_socket_channel/io.dart';
-import 'package:web_socket_channel/status.dart' as status;
 
 class MininetService {
   final BuildContext context;
-  MininetService(this.context) {
+  static MininetService? _instance;
+
+  factory MininetService(BuildContext context) {
+    return _instance ??= MininetService._internal(context);
+  }
+  MininetService._internal(this.context) {
     _connect();
   }
 
-  final String mininetUrl = "ws://192.168.1.17:8000/ws";
+  final String mininetUrl = "ws://192.168.56.102:8000/ws";
   IOWebSocketChannel? channel;
   Timer? _reconnectTimer;
   bool _isConnected = false;
@@ -21,95 +27,76 @@ class MininetService {
 
   void _connect() {
     try {
+      _closeExistingConnection(); // Close old connection before making a new one
       channel = IOWebSocketChannel.connect(Uri.parse(mininetUrl));
 
-      // Listen for messages
       channel!.stream.listen(
         (message) {
           _isConnected = true;
+          Provider.of<ServerProvider>(context, listen: false)
+              .updateConnection(true);
           isScheduledConnectionRunning = false;
-          String msg = message.toString().toLowerCase();
-          log("Message received: $msg");
-          if (msg.split(' ')[0] == 'pingall') {
-            log('Pingall result received...');
-            String result = msg.split(':')[1].trim();
-            double? dropped = double.tryParse(result);
-            if (dropped != null) {
-              log("Pingall Result: $dropped% packets dropped");
-              if (dropped != 0.0) {
-                Navigator.pop(context);
-                MyDialogs.showErrorSnackbar(
-                    context, '$dropped% packets dropped');
-              } else {
-                Navigator.pop(context);
-                MyDialogs.showSuccessSnackbar(
-                    context, 'Pingall success. No packets dropped.');
-              }
-            }
-          }
-          if (msg.split(' ')[0] == 'ping') {
-            log('Pingall result received...');
-            List data = msg.split(' ');
-            String result = data[data.length - 1];
-            String host1 = data[2];
-            String host2 = data[4];
-
-            log("Ping from $host1 to $host2 success");
-            if (result == 'failure') {
-              Navigator.pop(context);
-              MyDialogs.showErrorSnackbar(
-                  context, 'Ping from $host1 to $host2 failed');
-            } else {
-              Navigator.pop(context);
-              MyDialogs.showSuccessSnackbar(
-                  context, 'Ping from $host1 to $host2 success');
-            }
-          }
           if (_responseCallback != null) {
-            _responseCallback!(message); // Forward message to callback
+            _responseCallback!(message);
           }
         },
-        onDone: () {
-          log("WebSocket closed, attempting to reconnect...");
-          _isConnected = false;
-          if (!isScheduledConnectionRunning) {
-            _scheduleReconnect();
-            isScheduledConnectionRunning = true;
-          }
-        },
+        onDone: _handleDisconnect,
         onError: (error) {
           log("WebSocket error: $error");
-          _isConnected = false;
-          if (!isScheduledConnectionRunning) {
-            _scheduleReconnect();
-            isScheduledConnectionRunning = true;
+          if (!error.toString().contains(
+              'The remote computer refused the network connection.')) {
+            // Show error to user for non-connection errors
           }
+          _handleDisconnect();
         },
       );
     } catch (e) {
       log("WebSocket connection error: $e");
-      _isConnected = false;
-      if (!isScheduledConnectionRunning) {
-        _scheduleReconnect();
-        isScheduledConnectionRunning = true;
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to connect: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
+      _handleDisconnect();
+    }
+  }
+
+  void _handleDisconnect() {
+    _isConnected = false;
+    Provider.of<ServerProvider>(context, listen: false).updateConnection(false);
+    _scheduleReconnect();
+  }
+
+  void _closeExistingConnection() {
+    if (channel != null) {
+      try {
+        channel!.sink.close();
+      } catch (e) {
+        log("Error closing existing WebSocket connection: $e");
+      }
+      channel = null;
     }
   }
 
   void _scheduleReconnect() {
     if (_reconnectTimer == null || !_reconnectTimer!.isActive) {
+      log("Scheduling reconnect in 5 seconds...");
+      isScheduledConnectionRunning = true; // Set flag to prevent multiple runs
       _reconnectTimer = Timer(const Duration(seconds: 5), () {
         log("Attempting to reconnect...");
+        isScheduledConnectionRunning = false;
         _connect();
       });
     }
   }
 
-  String startMininet(
-      int hosts, int switches, String topology, String? topoType) {
+  String startMininet(int hosts, String topology, String? topoType) {
     if (_isConnected) {
       try {
-        channel?.sink.add("start:$hosts:$switches:$topology:$topoType");
+        channel?.sink.add("start:$hosts:$topology:$topoType");
         return 'success';
       } catch (e) {
         log('Error starting Mininet: $e');
@@ -137,7 +124,13 @@ class MininetService {
   }
 
   void closeConnection() {
-    channel?.sink.close(status.goingAway);
-    _isConnected = false;
+    if (channel != null) {
+      try {
+        channel!.sink.close(1000, 'Connection closed by client');
+      } catch (e) {
+        log("Error closing WebSocket connection: $e");
+      }
+      channel = null;
+    }
   }
 }

@@ -27,7 +27,7 @@ double smallFontSize = 10;
 
 //Colors
 Color bgColor = const Color.fromARGB(255, 30, 32, 30); // Background color
-var buttonColor = const Color.fromARGB(255, 236, 223, 204); // Button Color
+var buttonColor = textfieldBGColor; // Button Color
 var textfieldBGColor = Colors.amber[200]; // Text Field BG Color
 var textColorBlack = Colors.black; // Text color White
 var textColorWhite = Colors.white;
